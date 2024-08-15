@@ -1,58 +1,59 @@
 import discord
 import os
-import json
-
-TOKEN = os.getenv('DISCORD_BOT_TOKEN')
+from datetime import datetime
 
 # Define intents
 intents = discord.Intents.default()
-intents.guilds = True
 intents.messages = True
+intents.guilds = True
 
 client = discord.Client(intents=intents)
 
-# Define a list of messages
-messages = [
-    "Hello there!",
-    "Hope you're having a great week!",
-    "Remember to stay positive!",
-    "Keep up the good work!",
-    "Don't forget to take breaks!",
-]
+# List of messages to choose from
+# get messages from workouts.txt
+with open('workouts.txt', 'r') as file:
+    MESSAGES = file.readlines()
+    MESSAGES = [message.strip().replace('\\n', '\n') for message in MESSAGES]  # Replace "\n" with actual newlines
+    
 
-# Define a file to keep track of the last sent message
-message_index_file = "message_index.json"
+def get_next_index():
+    try:
+        with open('index.txt', 'r') as file:
+            index = int(file.read().strip())
+    except FileNotFoundError:
+        index = 0
+    except ValueError:
+        index = 0
+    return index
 
-def get_message_index():
-    # Load the last index used from the file
-    if os.path.exists(message_index_file):
-        with open(message_index_file, 'r') as f:
-            return json.load(f).get('index', 0)
-    return 0
-
-def update_message_index(index):
-    # Save the current index to the file
-    with open(message_index_file, 'w') as f:
-        json.dump({'index': index}, f)
+def save_index(index):
+    with open('index.txt', 'w') as file:
+        file.write(str(index))
 
 @client.event
 async def on_ready():
     print(f'Logged in as {client.user}')
+    # Fetch channel by name
+    channel_name = 'rowing-bot'
+    for guild in client.guilds:
+        for channel in guild.channels:
+            if isinstance(channel, discord.TextChannel) and channel.name == channel_name:
+                index = get_next_index()
+                date = datetime.now().strftime('%d/%m')
+                message = f":star: {date} - This week's workout is: \n " + MESSAGES[index]
+                await channel.send(message)
+                print(f"Sent message: {message}")
+                
+                # Update index to next message
+                new_index = (index + 1) % len(MESSAGES)
+                save_index(new_index)
+                
+                # Log out after sending the message
+                await client.close()
+                return
 
-    # Get the current index
-    index = get_message_index()
+    print(f"Channel '{channel_name}' not found.")
 
-    # Send the message from the list
-    channel = discord.utils.get(client.get_all_channels(), name='rowing-bot')
-    if channel:
-        await channel.send(messages[index])
-
-    # Update the index for the next message
-    next_index = (index + 1) % len(messages)
-    update_message_index(next_index)
-
-    # Close the bot after sending the message
-    await client.close()
-
-client.run(TOKEN)
-
+# Token is set in the GitHub Actions environment
+token = os.getenv('DISCORD_BOT_TOKEN')
+client.run(token)

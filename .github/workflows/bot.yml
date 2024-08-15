@@ -1,0 +1,43 @@
+name: Run Discord Bot
+
+on:
+  schedule:
+    - cron: '1 0 * * 4'  # Runs at 00:01am every Thursday (UTC)
+  workflow_dispatch:  # Allows manual triggering of the workflow
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Add index file
+        run: |
+          if [ ! -f index.txt ]; then
+            echo "0" > index.txt
+          fi
+
+      - name: Run Discord Bot
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+        run: |
+          python bot.py
+
+      - name: Commit updated index file
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: github-actions
+          author_email: github-actions@github.com
+          message: 'Update message index'
+          add: 'index.txt'
