@@ -34,7 +34,7 @@ def save_index(index):
 async def on_ready():
     print(f'Logged in as {client.user}')
     # Fetch channel by name
-    channel_name = 'bot-testing'
+    channel_name = 'workout-of-the-week'
     for guild in client.guilds:
         for channel in guild.channels:
             if isinstance(channel, discord.TextChannel) and channel.name == channel_name:
