@@ -3,7 +3,7 @@ A discord bot built for the [r/Rowing discord community](https://discord.gg/Mujt
 
 ## Running the project locally
 ### Prerequisites
-python3, pip
+python3
 
 ### Installation
 1. Install dependencies
